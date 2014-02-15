@@ -15,7 +15,7 @@ Please create a config.yaml file from the config.yaml.example template
 in the ./provisioning/ directory
 ERROR
 
-unless File.exist?("oracle/files/oracle-xe-11.2.0-1.0.x86_64.rpm.zip")
+unless File.exist?("oracle/oracle-xe-11.2.0-1.0.x86_64.rpm.zip")
   raise ORACLE_MESSAGE
 end
 
