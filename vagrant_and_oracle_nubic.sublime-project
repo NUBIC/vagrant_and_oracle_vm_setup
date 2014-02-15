@@ -1,0 +1,20 @@
+{
+	"folders":
+	[
+		{
+			"follow_symlinks": true,
+			"path": ".",
+      "name": "Vagrant and Oracle VM Setup for NUBIC",
+      "folder_exclude_patterns":
+      [
+        ".vagrant",
+        "dumpfiles"
+      ],
+      "file_exclude_patterns":
+      [
+        "*.sublime-*",
+        "LICENSE"
+      ]
+    }
+	]
+}

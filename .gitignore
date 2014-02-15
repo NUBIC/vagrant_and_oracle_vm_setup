@@ -1,3 +1,9 @@
 .vagrant
-modules/oracle/files/oracle-xe-11.2.0-1.0.x86_64.rpm.zip
-puppetconfig/hiera.yaml
+vagrant_ansible_inventory_default
+oracle/*.zip
+oracle/Disk1
+oracle/Disk2
+oracle/xe.rsp
+oracle/dump/*.dmp
+oracle/dump/*.log
+provisioning/config.yml
