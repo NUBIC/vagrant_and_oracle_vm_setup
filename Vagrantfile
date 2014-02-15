@@ -19,7 +19,7 @@ unless File.exist?("oracle/oracle-xe-11.2.0-1.0.x86_64.rpm.zip")
   raise ORACLE_MESSAGE
 end
 
-unless File.exist?("provisioning/config.yaml")
+unless File.exist?("provisioning/config.yml")
   raise CONFIG_MISSING_MESSAGE
 end
 
