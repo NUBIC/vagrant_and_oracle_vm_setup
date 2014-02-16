@@ -24,30 +24,28 @@ unless File.exist?("provisioning/config.yml")
 end
 
 
-## -- Add dump files to the yaml file for the database -------------------------
-config = YAML.load_file "provisioning/config.yml"
-dmps = Dir["oracle/dump/*.dmp"]
-databases = dmps.collect { |f| "#{f.gsub("oracle/dump/","").gsub(".dmp","")}" }
-config["databases"] = databases
+# Add dump files to the yaml file for the database -----------------------------
+  config = YAML.load_file "provisioning/config.yml"
+  dmps = Dir["oracle/dump/*.dmp"]
+  databases = dmps.collect { |f|
+    "#{f.gsub("oracle/dump/","").gsub(".dmp","")}"
+  }
+  config["databases"] = databases
+# Adding extra sql files -------------------------------------------------------
+  extra_sql = Dir["oracle/custom_sql/**/*.sql"]
+  processed = extra_sql.collect { |f|
+    "#{f.gsub("oracle/custom_sql/","").gsub(".sql","")}"
+  }
 
-## -- Adding extra sql files
+  sql_final = []
+  processed.each do |sql|
+    split_file = sql.split("/")
+    sql_final << Hash["db" => split_file.first, "file" => split_file.last]
+  end
 
-extra_sql = Dir["oracle/custom_sql/**/*.sql"]
-processed = extra_sql.collect { |f|
-  "#{f.gsub("oracle/custom_sql/","").gsub(".sql","")}"
-}
-
-sql_final = Array.new
-processed.each do |sql|
-  split_file = sql.split("/")
-  database = split_file.size > 1 ? split_file.first : "system"
-  sql_final << Hash["db" => database, "file" => split_file.last]
-end
-
-config["extra_sql"] = sql_final
-File.open("provisioning/config.yml", 'w') { |f| YAML.dump(config, f) }
-
-# ---------------------------------------------------------------------------
+  config["extra_sql"] = sql_final
+  File.open("provisioning/config.yml", 'w') { |f| YAML.dump(config, f) }
+# ------------------------------------------------------------------------------
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box = "centos-64-x86_64"
@@ -56,19 +54,15 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   config.vm.provider :virtualbox do |vb|
     vb.customize ["modifyvm", :id,
-                  "--memory", "1024",
-                  "--name",   config["vm_name"],
+                  "--memory", "1024"
+                  # "--name",   config["vm_name"],
                   ]
   end
-
-  config.vm.provision :shell, :inline =>
-    "echo \"America/Chicago\" | sudo tee /etc/timezone && dpkg-reconfigure" \
-    " --frontend noninteractive tzdata"
 
   config.vm.provision "ansible" do |ansible|
     ansible.playbook = "provisioning/oracle-xe.yml"
     ansible.extra_vars = "provisioning/config.yml"
-    ansible.verbose = 'v'
+    ansible.verbose = ''
     ansible.host_key_checking = 'false'
   end
 
@@ -79,5 +73,4 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     guest: 1521,
     host: 1521,
     auto_correct: true
-
 end

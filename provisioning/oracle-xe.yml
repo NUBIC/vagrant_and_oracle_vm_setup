@@ -31,22 +31,30 @@
         system/{{ oracle_password }}@localhost < /vagrant/oracle/init.sql
     - name: create databases from the .dmp files in /oracle/
       shell: ORACLE_HOME=/u01/app/oracle/product/11.2.0/xe /u01/app/oracle/product/11.2.0/xe/bin/sqlplus
-        system/{{ oracle_password }}@localhost @/vagrant/oracle/import_db.sql {{ item }} {{ oracle_password }}
+        system/{{ oracle_password }}@localhost @/vagrant/oracle/create_db.sql {{ item }} {{ oracle_password }}
       with_items: databases
+    - name: create test databases from the .dmp files in /oracle/
+      shell: ORACLE_HOME=/u01/app/oracle/product/11.2.0/xe /u01/app/oracle/product/11.2.0/xe/bin/sqlplus
+        system/{{ oracle_password }}@localhost @/vagrant/oracle/create_db.sql "{{ item }}_test" {{ oracle_password }}
+      with_items: databases
+      when: create_test_databases == true
     - name: adding stragg and encrypt_password functions
       shell: ORACLE_HOME=/u01/app/oracle/product/11.2.0/xe /u01/app/oracle/product/11.2.0/xe/bin/sqlplus
         system/{{ oracle_password }}@localhost < /vagrant/oracle/extra_functions.sql
     - name: put the oracle user in the vagrant group
       user: name=oracle groups=vagrant
-    # - name: actually import databases from the .dmp files
-    #   shell: /vagrant/oracle/impdp.sh {{ item }} {{ oracle_password }}
-    #   with_items: databases
-    #   ignore_errors: True
     - name: actually import databases from the .dmp files
-      command: /vagrant/oracle/impdp.sh {{ item }} {{ oracle_password }}
+      shell: /vagrant/oracle/impdp.sh {{ item }} {{ oracle_password }}
         creates=/vagrant/oracle/dump/{{ item }}_imp.log
       with_items: databases
       ignore_errors: True
-    - name: add any e
-      debug: msg="hello {{ item.file }} {{ item.db }}"
+    - name: creating test database schemas
+      shell: /vagrant/oracle/impdp_test.sh {{ item }} {{ oracle_password }}
+        creates=/vagrant/oracle/dump/{{ item }}_test_imp.log
+      with_items: databases
+      ignore_errors: True
+      when: create_test_databases == true
+    - name: add any extra oracle files
+      shell: ORACLE_HOME=/u01/app/oracle/product/11.2.0/xe /u01/app/oracle/product/11.2.0/xe/bin/sqlplus
+        {{ item.db }}/{{ oracle_password }}@localhost < /vagrant/oracle/custom_sql/{{ item.db }}/{{ item.file }}.sql
       with_items: extra_sql
