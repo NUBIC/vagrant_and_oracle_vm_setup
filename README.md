@@ -27,5 +27,5 @@ Vagrant and Oracle VM Setup Installer Thingy
 
 ### Notes:
 
-* You can re-import your databases from fresh dmp files by deleting the log files in /oracle/dump/
+* You can re-import your databases from fresh dmp files by deleting the log files in /provisioning/roles/oracle/extra/dump/
 
