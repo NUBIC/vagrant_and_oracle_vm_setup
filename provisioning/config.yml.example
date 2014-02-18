@@ -2,3 +2,4 @@
 oracle_password: d4t4b4s3p4ssw0rd
 vm_name: nubic_oracle
 create_test_databases: true
+ruby_version: 2.1.0

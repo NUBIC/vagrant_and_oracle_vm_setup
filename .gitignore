@@ -1,10 +1,9 @@
 .vagrant
 vagrant_ansible_inventory_default
-oracle/*.zip
-oracle/Disk1
-oracle/Disk2
-oracle/xe.rsp
-oracle/dump/*.dmp
-oracle/dump/*.log
-provisioning/config.yml
+*.zip
+Disk1
+xe.rsp
+*.dmp
+*.log
+config.yml
 todo

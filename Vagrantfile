@@ -4,8 +4,8 @@ VAGRANTFILE_API_VERSION = "2"
 
 ORACLE_MESSAGE = <<ERROR
 ERROR: Can't find the Oracle RPM file!
-  Please put oracle-xe-11.2.0-1.0.x86_64.rpm.zip into the ./oracle/ directory
-  You can download it at:
+  Please put oracle-xe-11.2.0-1.0.x86_64.rpm.zip into
+  the ./provisioning/ directory. You can download it at:
   http://www.oracle.com/technetwork/products/express-edition/downloads
 ERROR
 
@@ -15,7 +15,7 @@ Please create a config.yaml file from the config.yaml.example template
 in the ./provisioning/ directory
 ERROR
 
-unless File.exist?("oracle/oracle-xe-11.2.0-1.0.x86_64.rpm.zip")
+unless File.exist?("provisioning/oracle-xe-11.2.0-1.0.x86_64.rpm.zip")
   raise ORACLE_MESSAGE
 end
 
@@ -26,15 +26,15 @@ end
 
 # Add dump files to the yaml file for the database -----------------------------
   config = YAML.load_file "provisioning/config.yml"
-  dmps = Dir["oracle/dump/*.dmp"]
+  dmps = Dir["provisioning/roles/oracle/extra/dump/*.dmp"]
   databases = dmps.collect { |f|
-    "#{f.gsub("oracle/dump/","").gsub(".dmp","")}"
+    "#{f.gsub("provisioning/roles/oracle/extra/dump/","").gsub(".dmp","")}"
   }
   config["databases"] = databases
 # Adding extra sql files -------------------------------------------------------
-  extra_sql = Dir["oracle/custom_sql/**/*.sql"]
+  extra_sql = Dir["provisioning/roles/oracle/extra/sql/**/*.sql"]
   processed = extra_sql.collect { |f|
-    "#{f.gsub("oracle/custom_sql/","").gsub(".sql","")}"
+    "#{f.gsub("provisioning/roles/oracle/extra/sql/","").gsub(".sql","")}"
   }
 
   sql_final = []
@@ -60,7 +60,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   end
 
   config.vm.provision "ansible" do |ansible|
-    ansible.playbook = "provisioning/oracle-xe.yml"
+    ansible.playbook = "provisioning/site.yml"
     ansible.extra_vars = "provisioning/config.yml"
     ansible.verbose = ''
     ansible.host_key_checking = 'false'
@@ -73,4 +73,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     guest: 1521,
     host: 1521,
     auto_correct: true
+  config.vm.network "forwarded_port",
+    guest: 80,
+    host: 8080
 end

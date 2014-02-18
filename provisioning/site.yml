@@ -1,0 +1,9 @@
+---
+
+- name: Create a NUBIC VM!
+  hosts: all
+  vars:
+    oracle_path: "/vagrant/provisioning/roles/oracle/extra"
+  roles:
+    # - ruby
+    - oracle

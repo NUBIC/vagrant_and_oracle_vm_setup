@@ -1,0 +1,60 @@
+---
+- name: ensure packages required are installed
+  yum: pkg={{ item }} state=latest
+  sudo: true
+  with_items:
+    - libaio
+    - bc
+    - flex
+    - unzip
+- name: unzip oracle rpm
+  command: /usr/bin/unzip -q /vagrant/provisioning/oracle*.rpm.zip -d {{ oracle_path }} creates="{{ oracle_path }}/Disk1"
+- name: install oracle
+  sudo: true
+  shell: /bin/rpm -ivh "{{ oracle_path }}/Disk1/oracle-xe-11.2.0-1.0.x86_64.rpm" creates=/u01
+- name: setup oracle config file from user config file
+  template: src=xe.j2 dest="{{ oracle_path }}/xe.rsp"
+- name: configure oracle
+  shell: /etc/init.d/oracle-xe configure responseFile="{{ oracle_path }}/xe.rsp"
+  sudo: true
+  ignore_errors: True
+- name: setup oracle environment
+  shell: /bin/echo 'source /u01/app/oracle/product/11.2.0/xe/bin/oracle_env.sh' >> /home/vagrant/.bash_profile
+- name: stop ip tables
+  shell: service iptables stop
+  sudo: true
+- name: set oracle listener
+  shell: ORACLE_HOME=/u01/app/oracle/product/11.2.0/xe /u01/app/oracle/product/11.2.0/xe/bin/sqlplus
+    system/{{ oracle_password }}@localhost < "{{ oracle_path }}/set_listener.sql"
+- name: setup tablespaces/do some initialization
+  shell: ORACLE_HOME=/u01/app/oracle/product/11.2.0/xe /u01/app/oracle/product/11.2.0/xe/bin/sqlplus
+    system/{{ oracle_password }}@localhost < "{{ oracle_path }}/init.sql"
+- name: create databases from the .dmp files in "{{ oracle_path }}/dump"
+  shell: ORACLE_HOME=/u01/app/oracle/product/11.2.0/xe /u01/app/oracle/product/11.2.0/xe/bin/sqlplus
+    system/{{ oracle_password }}@localhost @{{ oracle_path }}/create_db.sql {{ item }} {{ oracle_password }}
+  with_items: databases
+- name: create test databases from the .dmp files in /oracle/
+  shell: ORACLE_HOME=/u01/app/oracle/product/11.2.0/xe /u01/app/oracle/product/11.2.0/xe/bin/sqlplus
+    system/{{ oracle_password }}@localhost @{{ oracle_path }}/create_db.sql "{{ item }}_test" {{ oracle_password }}
+  with_items: databases
+  when: create_test_databases == true
+- name: adding stragg and encrypt_password functions
+  shell: ORACLE_HOME=/u01/app/oracle/product/11.2.0/xe /u01/app/oracle/product/11.2.0/xe/bin/sqlplus
+    system/{{ oracle_password }}@localhost < "{{ oracle_path }}/extra_functions.sql"
+- name: put the oracle user in the vagrant group
+  sudo: true
+  user: name=oracle groups=vagrant
+- name: actually import databases from the .dmp files
+  shell: "{{ oracle_path }}/impdp.sh {{ item }} {{ oracle_password }} creates={{ oracle_path }}/dump/{{ item }}_imp.log"
+  with_items: databases
+  ignore_errors: true
+- name: creating test database schemas
+  shell: "{{ oracle_path }}/impdp_test.sh {{ item }} {{ oracle_password }}
+    creates={{ oracle_path }}/dump/{{ item }}_test_imp.log"
+  with_items: databases
+  ignore_errors: true
+  when: create_test_databases == true
+- name: add any extra oracle files
+  shell: ORACLE_HOME=/u01/app/oracle/product/11.2.0/xe /u01/app/oracle/product/11.2.0/xe/bin/sqlplus
+    {{ item.db }}/{{ oracle_password }}@localhost < {{ oracle_path }}/sql/{{ item.db }}/{{ item.file }}.sql
+  with_items: extra_sql

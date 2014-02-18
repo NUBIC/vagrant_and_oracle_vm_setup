@@ -1,0 +1,22 @@
+---
+- name: ensure packages required are installed
+  yum: pkg={{ item }} state=latest
+  sudo: true
+  with_items:
+    - git
+- name: checkout ruby-build
+  action: git repo=git://github.com/sstephenson/ruby-build.git dest=/home/vagrant/ruby-build
+- name: build ruby-build
+  action: shell chdir=/home/vagrant/ruby-build creates=/usr/local/bin/ruby-build sudo ./install.sh
+- name: install ruby
+  action: shell creates="/home/vagrant/local/ruby/{{ ruby_version }}" /usr/local/bin/ruby-build {{ ruby_version }} "/home/vagrant/local/ruby/{{ ruby_version }}"
+- name: hack the path
+  template: src=bash_profile.j2 dest=/home/vagrant/.bash_profile
+- name: set the source
+  shell: source /home/vagrant/.bash_profile
+# - name: install bundler
+#   command: gem install bundler --no-rdoc --no-ri
+# - name: install passenger
+#   command: gem install passenger --no-rdoc --no-ri
+# - name: install bundler
+#   command: gem install rails --no-rdoc --no-ri
